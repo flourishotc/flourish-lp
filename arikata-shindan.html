@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>在り方診断 | FLOURISH O.T.C.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+1p:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0908;
+    --bg-raised:#141210;
+    --line:#2a211a;
+    --text:#f2ede4;
+    --text-dim:#9c948a;
+    --ember-1:#d4632c;
+    --ember-2:#f2a93b;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:"M PLUS 1p", sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  body{
+    display:flex;
+    justify-content:center;
+    padding:56px 20px 80px;
+  }
+  .stage{
+    width:100%;
+    max-width:640px;
+  }
+
+  /* 進行度ゲージ */
+  .gauge{
+    height:3px;
+    width:100%;
+    background:var(--line);
+    border-radius:2px;
+    overflow:hidden;
+    margin-bottom:14px;
+  }
+  .gauge-fill{
+    height:100%;
+    width:0%;
+    background:linear-gradient(90deg, var(--ember-1), var(--ember-2));
+    transition:width .5s ease;
+  }
+  .gauge-label{
+    font-size:13px;
+    color:var(--text-dim);
+    letter-spacing:.02em;
+    margin-bottom:48px;
+  }
+
+  /* イントロ */
+  .panel{display:none;}
+  .panel.active{display:block; animation:fadein .45s ease;}
+  @keyframes fadein{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+
+  .eyebrow{
+    font-size:14px;
+    color:var(--ember-2);
+    margin-bottom:18px;
+  }
+  h1{
+    font-size:clamp(28px, 5vw, 38px);
+    font-weight:900;
+    line-height:1.4;
+    margin-bottom:22px;
+  }
+  .lead{
+    font-size:16px;
+    line-height:1.9;
+    color:var(--text-dim);
+    margin-bottom:40px;
+    max-width:52ch;
+  }
+
+  /* 質問 */
+  h2{
+    font-size:clamp(20px, 4vw, 25px);
+    font-weight:700;
+    line-height:1.6;
+    margin-bottom:32px;
+  }
+  .options{
+    display:flex;
+    flex-direction:column;
+  }
+  .option{
+    text-align:left;
+    background:none;
+    border:none;
+    border-top:1px solid var(--line);
+    padding:22px 4px;
+    font-family:inherit;
+    font-size:16px;
+    color:var(--text);
+    line-height:1.7;
+    cursor:pointer;
+    position:relative;
+    transition:color .2s ease, padding-left .2s ease;
+  }
+  .options .option:last-child{ border-bottom:1px solid var(--line); }
+  .option::before{
+    content:"";
+    position:absolute;
+    left:-4px; top:0; bottom:0;
+    width:2px;
+    background:linear-gradient(180deg, var(--ember-1), var(--ember-2));
+    transform:scaleY(0);
+    transform-origin:top;
+    transition:transform .2s ease;
+  }
+  .option:hover{ color:var(--ember-2); padding-left:16px; }
+  .option:hover::before{ transform:scaleY(1); }
+
+  /* CTAボタン */
+  .btn{
+    display:inline-block;
+    margin-top:8px;
+    padding:16px 34px;
+    background:linear-gradient(90deg, var(--ember-1), var(--ember-2));
+    color:#141210;
+    font-family:inherit;
+    font-weight:700;
+    font-size:16px;
+    border:none;
+    border-radius:2px;
+    cursor:pointer;
+    text-decoration:none;
+  }
+  .btn:hover{ filter:brightness(1.08); }
+  .btn-ghost{
+    display:inline-block;
+    margin-top:18px;
+    margin-left:4px;
+    color:var(--text-dim);
+    font-size:14px;
+    background:none;
+    border:none;
+    font-family:inherit;
+    cursor:pointer;
+    text-decoration:underline;
+  }
+
+  /* 結果 */
+  .result-type{
+    font-size:13px;
+    color:var(--ember-2);
+    margin-bottom:14px;
+  }
+  .result-title{
+    font-size:clamp(26px, 5vw, 34px);
+    font-weight:900;
+    line-height:1.45;
+    margin-bottom:26px;
+  }
+  .result-body{
+    font-size:15px;
+    line-height:2;
+    color:var(--text-dim);
+    margin-bottom:16px;
+    max-width:54ch;
+  }
+  .result-card{
+    border:1px solid var(--line);
+    background:var(--bg-raised);
+    padding:24px;
+    margin:30px 0 36px;
+  }
+  .result-card p{
+    font-size:14px;
+    line-height:1.9;
+    color:var(--text);
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+
+  <div class="gauge"><div class="gauge-fill" id="gaugeFill"></div></div>
+  <div class="gauge-label" id="gaugeLabel">診断をはじめる</div>
+
+  <!-- イントロ -->
+  <div class="panel active" data-panel="intro">
+    <div class="eyebrow">在り方診断</div>
+    <h1>今のあなたを動かしている<br>炎の性質を見つける</h1>
+    <p class="lead">
+      5つの質問に答えるだけです<br>
+      正解を選ぶ必要はありません<br>
+      今いちばんしっくりくるものを選んでください
+    </p>
+    <button class="btn" onclick="startQuiz()">診断をはじめる</button>
+  </div>
+
+  <!-- 質問パネルはJSで生成 -->
+  <div id="quizMount"></div>
+
+  <!-- 結果 -->
+  <div class="panel" data-panel="result">
+    <div class="result-type" id="resultType"></div>
+    <div class="result-title" id="resultTitle"></div>
+    <div class="result-body" id="resultBody"></div>
+    <div class="result-card">
+      <p id="resultAdvice"></p>
+    </div>
+    <a class="btn" id="resultCta" href="#" target="_blank" rel="noopener">LINEでけんに結果を伝える</a>
+    <br>
+    <button class="btn-ghost" onclick="restart()">もう一度診断する</button>
+  </div>
+
+</div>
+
+<script>
+const questions = [
+  {
+    text: "今の自分にいちばん近い感覚は",
+    options: [
+      "もっと数字を追いたいのに動けていない",
+      "直感はあるのに行動に移せていない",
+      "やることは多いのに誰とも深く向き合えていない",
+      "流れが来ている感覚はあるが波に乗り切れていない"
+    ]
+  },
+  {
+    text: "お客様との関係で大事にしたいのは",
+    options: [
+      "明確な数字と結果で示すこと",
+      "その場のエネルギーを感じて動くこと",
+      "信頼を積み上げてから提案すること",
+      "タイミングを見極めて声をかけること"
+    ]
+  },
+  {
+    text: "迷ったときにまず頼るのは",
+    options: [
+      "過去の実績やデータ",
+      "直感やインスピレーション",
+      "信頼できる人の意見",
+      "今の流れやタイミング"
+    ]
+  },
+  {
+    text: "理想の働き方は",
+    options: [
+      "仕組みが回り続ける状態",
+      "直感で動いても結果がついてくる状態",
+      "一人一人と深く向き合える状態",
+      "波に乗って自然と広がっていく状態"
+    ]
+  },
+  {
+    text: "これから半年で一番育てたい力は",
+    options: [
+      "売る力",
+      "感じる力",
+      "伝える力",
+      "見極める力"
+    ]
+  }
+];
+
+const types = [
+  {
+    key: "design",
+    label: "設計の炎タイプ",
+    title: "数字と構造で\n炎を灯すタイプ",
+    body: "感覚よりもまず仕組みを整えたい人です。売れる流れを設計し切ったとき初めて動き出せます。今のあなたに足りないのは根性ではなく型です。",
+    advice: "Numbers Firstの考え方に沿って、今の導線のどこで数字が止まっているかを一つだけ特定するところから始めてください。"
+  },
+  {
+    key: "intuition",
+    label: "直感の炎タイプ",
+    title: "感じたことを\nそのまま形にするタイプ",
+    body: "ロジックより先に体が動くタイプです。頭で考えすぎると逆に炎が小さくなります。今必要なのは直感を止めない環境作りです。",
+    advice: "今日ひらめいたことを一つ、説明抜きでそのまま行動に移してみてください。理由は後からついてきます。"
+  },
+  {
+    key: "circulation",
+    label: "循環の炎タイプ",
+    title: "人との関係の中で\n炎を大きくするタイプ",
+    body: "一人で完結するより誰かと関わる中で力が湧くタイプです。売らずに売れる営業設計は本来あなたが一番自然にできる形です。",
+    advice: "今週すでに信頼関係がある一人に対して、売り込まずにただ近況を聞く時間を作ってください。そこから動きが生まれます。"
+  },
+  {
+    key: "awakening",
+    label: "覚醒の炎タイプ",
+    title: "流れとタイミングを\n読んで動くタイプ",
+    body: "宇宙のタイミングや流れを感じ取る力が強いタイプです。ただし流れを待ちすぎると動きが止まります。感じたら動く速さが鍵です。",
+    advice: "最近気になっている角度番号やサインが出たら、意味を考える前にまず一つ小さな行動を起こしてください。"
+  }
+];
+
+let current = 0;
+const answers = [];
+
+function buildQuiz(){
+  const mount = document.getElementById('quizMount');
+  questions.forEach((q, i) => {
+    const panel = document.createElement('div');
+    panel.className = 'panel';
+    panel.dataset.panel = 'q' + i;
+
+    const h2 = document.createElement('h2');
+    h2.textContent = q.text;
+    panel.appendChild(h2);
+
+    const optWrap = document.createElement('div');
+    optWrap.className = 'options';
+    q.options.forEach((optText, idx) => {
+      const btn = document.createElement('button');
+      btn.className = 'option';
+      btn.textContent = optText;
+      btn.onclick = () => selectAnswer(i, idx);
+      optWrap.appendChild(btn);
+    });
+    panel.appendChild(optWrap);
+    mount.appendChild(panel);
+  });
+}
+buildQuiz();
+
+function showPanel(name){
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelector('[data-panel="' + name + '"]').classList.add('active');
+}
+
+function updateGauge(){
+  const pct = Math.round((current / questions.length) * 100);
+  document.getElementById('gaugeFill').style.width = pct + '%';
+  document.getElementById('gaugeLabel').textContent =
+    current < questions.length ? '質問 ' + (current + 1) + ' / ' + questions.length : '診断結果';
+}
+
+function startQuiz(){
+  current = 0;
+  answers.length = 0;
+  updateGauge();
+  showPanel('q0');
+}
+
+function selectAnswer(qIndex, optIndex){
+  answers[qIndex] = optIndex;
+  current = qIndex + 1;
+  updateGauge();
+  if (current < questions.length){
+    showPanel('q' + current);
+  } else {
+    showResult();
+  }
+}
+
+function showResult(){
+  const counts = [0,0,0,0];
+  answers.forEach(a => counts[a]++);
+  let topIndex = 0;
+  counts.forEach((c, i) => { if (c > counts[topIndex]) topIndex = i; });
+
+  const result = types[topIndex];
+  document.getElementById('resultType').textContent = result.label;
+  document.getElementById('resultTitle').innerHTML = result.title.replace('\n', '<br>');
+  document.getElementById('resultBody').textContent = result.body;
+  document.getElementById('resultAdvice').textContent = result.advice;
+
+  const lineUrl = "https://line.me/R/ti/p/@820yacmv?ts=04181734&oat_content=url";
+  const cta = document.getElementById('resultCta');
+  cta.href = lineUrl;
+  cta.textContent = result.label + "の結果をLINEでけんに伝える";
+
+  showPanel('result');
+  document.getElementById('gaugeFill').style.width = '100%';
+  document.getElementById('gaugeLabel').textContent = '診断結果';
+}
+
+function restart(){
+  showPanel('intro');
+  document.getElementById('gaugeFill').style.width = '0%';
+  document.getElementById('gaugeLabel').textContent = '診断をはじめる';
+}
+</script>
+
+</body>
+</html>
